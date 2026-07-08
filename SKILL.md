@@ -8,7 +8,7 @@ description: >-
   工作簿结构(v1.7.0)：①基础信息(含配料多语对照) ②食品安全风险识别表(31列，含指标名称四语/法规名称三语/「声称执行标准」)
   ③指标对比查询(公式透视，地区列用官方全称，点击单元格可跳转源表)。农残/污染物逐物质展开，强制含微生物/致病菌指标。
   触发词：食品多语言安全风险识别、食品安全风险识别表、录入食品、食品合规、food safety risk、全球食品标准。
-version: 1.7.0
+version: 1.7.1
 author: user-request
 ---
 
@@ -175,7 +175,7 @@ author: user-request
 | 添加剂说明 | 工艺/残留背景 |
 | 过敏原 | |
 | 翻译置信度提示 | 低资源语言标注 |
-| skill 版本 | 1.7.0（可追溯） |
+| skill 版本 | 1.7.1（可追溯） |
 | 生成日期 | |
 
 **配料多语对照（子表，14 语列）**：字段行 = 名称 / 类别 / 配料(逐条)；列 = 简中/繁中/英/泰/高棉/越/阿/法/德/俄/西/葡/日/韩。所有配料同步给出多语名称（需求 #5）。
@@ -350,6 +350,7 @@ STD_EN = {
     "GB 2760-2024": "National Food Safety Standard – Standards for Uses of Food Additives (GB 2760-2024)",
     "GB 2762-2022": "National Food Safety Standard – Maximum Levels of Contaminants in Foods (GB 2762-2022)",
     "GB 2763-2021": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763-2021)",
+    "GB 2763-2026": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763-2026)",
     "GB 5009.34": "National Food Safety Standard – Determination of Sulfur Dioxide in Foods (GB 5009.34)",
     "GB 7718-2011": "National Food Safety Standard – General Rules for the Labelling of Prepackaged Foods (GB 7718-2011)",
     "GB 2763": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763)",
@@ -492,11 +493,12 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     ws.cell(1, 1).fill = head_fill; ws.cell(1, 1).font = head_font
     ws.cell(1, 2).fill = head_fill; ws.cell(1, 2).font = head_font
     base_rows = [
-        ("食品中文名", basic.get("name_cn")), ("国际/英文名", basic.get("aliases")),
+        ("食品中文名", basic.get("name_cn")), ("国际/英文名", basic.get("name_en") or basic.get("aliases")),
         ("别名/同义词", basic.get("aliases")), ("类别", basic.get("category")),
+        ("配料", basic.get("ingredients_cn")),
         ("食品添加剂(含代码)", basic.get("additives")), ("添加剂说明", basic.get("additive_note")),
         ("过敏原", basic.get("allergens")), ("翻译置信度提示", basic.get("trans_conf")),
-        ("skill 版本", "1.7.0"), ("生成日期", basic.get("gen_date")),
+        ("skill 版本", "1.7.1"), ("生成日期", basic.get("gen_date")),
     ]
     for k, v in base_rows:
         ws.append([k, G(v)])
@@ -512,7 +514,8 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     for c in range(1, len(langs) + 2):
         ws.cell(ws.max_row, c).fill = head_fill; ws.cell(ws.max_row, c).font = head_font
     tmap = {t.get("field"): t for t in (translations or [])}
-    for field in ["名称", "类别", "配料(芒果)"]:
+    ing_fields = [f for f in tmap if f.startswith("配料")]
+    for field in ["名称", "类别"] + ing_fields:
         t = tmap.get(field, {})
         ws.append([field] + [G(t.get(l)) for l in langs])
     for row in ws.iter_rows(min_row=hr + 1, max_row=ws.max_row, max_col=len(langs) + 1):
@@ -696,6 +699,15 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
 - Sheet4 改为**公式透视**：地区列头用官方全称（AU/NZ→澳大利亚/新西兰食品标准局（FSANZ）、APEC→亚太经济合作组织（APEC）…），交叉单元格 `=HYPERLINK("#'食品安全风险识别表'!S{行}", …)` 从源表调取并可点击跳转；
 - 农残逐物质展开（咪鲜胺/啶虫脒/吡虫啉…）、污染物展开为 铅(Pb)/镉(Cd)/汞(Hg)/砷(As)；**强制保留微生物/致病菌指标**（菌落总数/大肠菌群/大肠杆菌/沙门氏菌/金黄色葡萄球菌/蜡样芽胞杆菌/霉菌/酵母），不得遗漏；
 - 新增「声称执行标准」字段（对应海外强制法规/自愿性认证，替代国内企业执行标准逻辑）。未检索到官方语言原文或微生物限量时，相关单元格标 `[待填写]` 并在 Sheet4 末附「信息缺口声明」。
+
+### 10.8 v1.7.1 修复记录（2026-07-08）
+
+经「芒果干 / 蜜饯 / 4 配料」端到端测试复盘，修复 3 处生成器缺陷并同步 `SKILL.md` 附录八参考实现：
+
+- **[BUG-1] 配料多语对照仅渲染固定字段**：原代码写死 `["名称","类别","配料(芒果)"]`，非芒果类或多配料食品的多语翻译整列丢失。改为渲染 `名称 / 类别` + 所有以 `配料` 开头的翻译字段，自动适配任意数量与名称的配料。
+- **[BUG-2] 基础信息缺「配料」整行**：`ingredients_cn` 未被读取，配方全配料未出现在 Sheet1。新增「配料」字段行，回显 `basic.json` 的 `ingredients_cn`。
+- **[BUG-3] 国际/英文名 与 别名/同义词 重复**：两者均读取 `aliases`。改为「国际/英文名」优先读 `name_en`，缺省回退 `aliases`，与「别名/同义词」区分。
+- **[知识漂移] 农药标准版本**：补 `GB 2763-2026`（2026-02-26 发布，替代 2021 版）英文映射，避免新规下法规名 fallback 为 `[待填写]`。
 
 ---
 > 免责声明：本 skill 由 AI 驱动，翻译与合规检索结果仅供参考，重要出口/上市决策须由具备资质的专业人员依据目标国主管机构及国际组织最新发布文件核验；本表不构成法律意见。

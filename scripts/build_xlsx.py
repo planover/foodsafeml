@@ -26,7 +26,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SKILL_VER = "1.7.0"
+SKILL_VER = "1.7.1"
 
 REGION_INFO = {
     "CN": ("中国", "China", "中国"), "HK": ("中国香港", "Hong Kong", "香港"),
@@ -132,6 +132,7 @@ STD_EN = {
     "GB 2760-2024": "National Food Safety Standard – Standards for Uses of Food Additives (GB 2760-2024)",
     "GB 2762-2022": "National Food Safety Standard – Maximum Levels of Contaminants in Foods (GB 2762-2022)",
     "GB 2763-2021": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763-2021)",
+    "GB 2763-2026": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763-2026)",
     "GB 5009.34": "National Food Safety Standard – Determination of Sulfur Dioxide in Foods (GB 5009.34)",
     "GB 7718-2011": "National Food Safety Standard – General Rules for the Labelling of Prepackaged Foods (GB 7718-2011)",
     "GB 2763": "National Food Safety Standard – Maximum Residue Limits for Pesticides in Food (GB 2763)",
@@ -280,8 +281,9 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     ws.cell(1, 1).fill = head_fill; ws.cell(1, 1).font = head_font
     ws.cell(1, 2).fill = head_fill; ws.cell(1, 2).font = head_font
     base_rows = [
-        ("食品中文名", basic.get("name_cn")), ("国际/英文名", basic.get("aliases")),
+        ("食品中文名", basic.get("name_cn")), ("国际/英文名", basic.get("name_en") or basic.get("aliases")),
         ("别名/同义词", basic.get("aliases")), ("类别", basic.get("category")),
+        ("配料", basic.get("ingredients_cn")),
         ("食品添加剂(含代码)", basic.get("additives")), ("添加剂说明", basic.get("additive_note")),
         ("过敏原", basic.get("allergens")), ("翻译置信度提示", basic.get("trans_conf")),
         ("skill 版本", SKILL_VER), ("生成日期", basic.get("gen_date")),
@@ -300,7 +302,8 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     for c in range(1, len(langs) + 2):
         ws.cell(ws.max_row, c).fill = head_fill; ws.cell(ws.max_row, c).font = head_font
     tmap = {t.get("field"): t for t in (translations or [])}
-    for field in ["名称", "类别", "配料(芒果)"]:
+    ing_fields = [f for f in tmap if f.startswith("配料")]
+    for field in ["名称", "类别"] + ing_fields:
         t = tmap.get(field, {})
         ws.append([field] + [G(t.get(l)) for l in langs])
     for row in ws.iter_rows(min_row=hr + 1, max_row=ws.max_row, max_col=len(langs) + 1):

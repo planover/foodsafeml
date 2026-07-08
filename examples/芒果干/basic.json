@@ -1,11 +1,18 @@
 {
   "name_cn": "芒果干",
-  "aliases": "芒果干 / 芒果果干 / 蜜饯芒果干 / 泰式芒果干 / dried mango / dried mango slices / unsulfured dried mango / mango leather / Mangifera indica",
-  "category": "水果干制品(纯水果，无蔬菜类)",
-  "ingredients_cn": "芒果（仅此一种；未添加白砂糖、酸味剂、防腐剂或香精）",
-  "additives": "无（产品配料仅含芒果，未声明任何食品添加剂）",
-  "additive_note": "因未使用亚硫酸盐等处理工艺，本品一般无人为添加 SO₂；但原料芒果本身及干燥环境可能引入微量残留，各国对'水果干'的 SO₂ 限量仍作为合规参考保留。",
-  "allergens": "芒果本身为常见食物过敏原，多数市场要求标签警示",
-  "trans_conf": "高棉语(km)、阿拉伯语(ar) 翻译置信度低，待专业核验",
-  "gen_date": "2026-07-07"
+  "name_en": "Dried Mango",
+  "aliases": "Mango sec / 乾芒果 / Mangga kering",
+  "category": "蜜饯",
+  "ingredients_cn": "芒果、白砂糖、柠檬酸、焦亚硫酸钠",
+  "ingredients": [
+    {"name": "芒果", "role": "主料", "code": ""},
+    {"name": "白砂糖", "role": "甜味料", "code": ""},
+    {"name": "柠檬酸", "role": "酸度调节剂", "code": "INS 330 / E330"},
+    {"name": "焦亚硫酸钠", "role": "漂白剂/防腐剂(二氧化硫来源)", "code": "INS 223 / E223"}
+  ],
+  "additives": "柠檬酸（INS 330 / E330）；焦亚硫酸钠（INS 223 / E223，二氧化硫来源）",
+  "additive_note": "焦亚硫酸钠属亚硫酸盐类，终产品以二氧化硫(SO₂)残留量计限量。",
+  "allergens": "芒果为常见食物过敏原；二氧化硫敏感人群需注意。",
+  "trans_conf": "高棉语(km)、阿拉伯语(ar) 翻译置信度低，需人工复核。",
+  "gen_date": "2026-07-08"
 }

@@ -3,7 +3,7 @@
 > WorkBuddy 技能（Skill）—— 给定任意食品名，产出可用于合规评估的 **多语 Excel《食品安全风险识别表》**，并留存标准原文与网页证据。
 
 - **技能 ID**：`foodsafeml`
-- **版本**：`1.7.0`
+- **版本**：`1.7.1`
 - **适用**：WorkBuddy（`~/.workbuddy/skills/foodsafeml/`）
 
 ---
