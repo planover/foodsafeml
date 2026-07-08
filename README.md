@@ -69,8 +69,21 @@ python scripts/build_xlsx.py ./food-safety-芒果干 芒果干
 foodsafeml/
 ├── SKILL.md                 # 技能定义与完整生成器参考实现（附录八）
 ├── README.md                # 本文件
-└── scripts/
-    └── build_xlsx.py        # 独立可运行的工作簿生成器
+├── LICENSE                  # MIT License
+├── scripts/
+│   └── build_xlsx.py        # 独立可运行的工作簿生成器
+└── examples/
+    └── 芒果干/               # 可运行示例（输入 basic/translations/risks + 产物 xlsx）
+        ├── basic.json
+        ├── translations.json
+        ├── risks.json
+        └── 芒果干_食品安全风险识别表_v1.7.0.xlsx
+```
+
+跑示例：
+
+```bash
+python scripts/build_xlsx.py examples/芒果干 芒果干
 ```
 
 ---
