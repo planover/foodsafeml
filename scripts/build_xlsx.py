@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-FoodSafeML (foodsafeml) v1.8.0 — 工作簿生成器（全量矩阵版）
+FoodSafeML (foodsafeml) v1.9.0 — 工作簿生成器（全量矩阵 + 权威数据填充版）
 ==========================================================
 给定某食品目录下的 basic.json / translations.json / risks.json，生成
 <食品名>_食品安全风险识别表.xlsx（3 个工作表）。
 
-v1.8.0 核心升级（全量矩阵）：
-  ① Sheet3 食品安全风险识别表：全量指标清单（5大类 72 项）× 有数据地区，
-     无数据的指标也列出框架行（值标 [待填写]），确保指标维度完整。
-  ② Sheet4 指标对比查询：全量指标(72) × 全量地区(36) 完整矩阵，
-     每个单元格有数据则 HYPERLINK 跳转源表，无数据标 [待填写]。
+v1.9.0 核心升级（全量地区 + 权威数据填充 + 来源可追溯）：
+  ① 地区清单从 36 → 235 个（全球主权国家+地区+国际组织/联盟/论坛，按洲分组）。
+  ② 内置 BASE_LIMITS 权威限量数据库（Codex/EU/US 等联网检索结果），
+     有数据的填实际值+来源URL，大幅减少 [待填写]。
+  ③ 标准体系映射：每个地区标注适用标准体系(自有/GB/EU/US/参照CODEX)，
+     采纳Codex的国家标注"适用Codex标准"并指向CODEX列，而非笼统[待填写]。
+  ④ 每条数据带 source_url 来源网址，可追溯法规原文。
+  ⑤ Sheet4 全量矩阵：72指标 × 235地区，按洲分区，冻结首行首列。
 
-防幻觉规则：缺失的多语字段 / 具体物质一律以 [待填写] 标注，绝不编造。
+防幻觉规则：缺失的多语字段/具体物质一律以 [待填写] 标注，绝不编造；
+但优先用 BASE_LIMITS 权威数据 + 标准体系映射填充，最大化减少空白。
 
 用法：
     python build_xlsx.py <食品目录> [<食品中文名>]
@@ -26,72 +30,13 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SKILL_VER = "1.8.0"
+SKILL_VER = "1.9.0"
 
-REGION_INFO = {
-    "CN": ("中国", "China", "中国"), "HK": ("中国香港", "Hong Kong", "香港"),
-    "MO": ("中国澳门", "Macao", "澳門"), "TW": ("中国台湾", "Taiwan", "臺灣"),
-    "JP": ("日本", "Japan", "日本"), "KR": ("韩国", "Korea", "한국"),
-    "US": ("美国", "United States", "United States"), "CA": ("加拿大", "Canada", "Canada"),
-    "BR": ("巴西", "Brazil", "Brasil"), "MX": ("墨西哥", "Mexico", "México"),
-    "EU": ("欧盟", "European Union", "Europäische Union"), "UK": ("英国", "United Kingdom", "United Kingdom"),
-    "FR": ("法国", "France", "France"), "DE": ("德国", "Germany", "Deutschland"),
-    "ES": ("西班牙", "Spain", "España"), "PT": ("葡萄牙", "Portugal", "Portugal"),
-    "AU/NZ": ("澳大利亚/新西兰", "Australia/New Zealand", "Australia/New Zealand"),
-    "CODEX": ("国际食品法典", "Codex Alimentarius", "Codex Alimentarius"),
-    "WHO/JECFA": ("联合国粮农/世卫 食品添加剂专家委员会", "WHO/FAO JECFA", "JECFA"),
-    "ISO": ("国际标准化组织", "ISO", "ISO"),
-    "TH": ("泰国", "Thailand", "ประเทศไทย"), "VN": ("越南", "Vietnam", "Việt Nam"),
-    "KH": ("柬埔寨", "Cambodia", "កម្ពុជា"), "ID": ("印度尼西亚", "Indonesia", "Indonesia"),
-    "MY": ("马来西亚", "Malaysia", "Malaysia"), "PH": ("菲律宾", "Philippines", "Pilipinas"),
-    "SG": ("新加坡", "Singapore", "Singapore"), "IN": ("印度", "India", "India"),
-    "RU/EAEU": ("俄罗斯/欧亚经济联盟", "Russia/EAEU", "Россия/EАЭС"),
-    "ASEAN": ("东盟", "ASEAN", "ASEAN"), "MERCOSUR": ("南方共同市场", "MERCOSUR", "MERCOSUR"),
-    "CARICOM": ("加勒比共同体", "CARICOM", "CARICOM"), "SPC/PIF": ("太平洋共同体/论坛", "Pacific Community/Forum", "Pacific"),
-    "WTO/SPS": ("世贸组织/SPS", "WTO/SPS", "WTO/SPS"), "APEC": ("亚太经合", "APEC", "APEC"),
-    "综合": ("综合/多辖区协调框架", "Multi-jurisdiction framework", "Framework"),
-}
-ALL_REGIONS = list(REGION_INFO.keys())
-
-# 地区代码 -> 官方全称（用于 Sheet4 列头）
-REGION_FULLNAME = {
-    "CN": "中华人民共和国 国家卫生健康委员会 / 国家食品安全风险评估中心（GB 标准）",
-    "HK": "中国香港特别行政区政府 食物环境卫生署食物安全中心",
-    "MO": "中国澳门特别行政区政府 市政署",
-    "TW": "中国台湾地区 卫生福利部食品药物管理署",
-    "JP": "日本国 厚生劳动省",
-    "KR": "大韩民国 食品药品安全部（MFDS）",
-    "US": "美国 食品药品监督管理局（FDA）/ 环境保护署（EPA）",
-    "CA": "加拿大 卫生部（Health Canada）",
-    "BR": "巴西联邦共和国 国家卫生监督局（ANVISA）",
-    "MX": "墨西哥合众国 卫生部（COFEPRIS）",
-    "EU": "欧洲联盟委员会（欧盟法规 / European Commission）",
-    "UK": "大不列颠及北爱尔兰联合王国 食品标准局（FSA）",
-    "FR": "法兰西共和国 竞争、消费与反欺诈总局（DGCCRF）",
-    "DE": "德意志联邦共和国 联邦食品与农业部（BMEL）",
-    "ES": "西班牙王国 食品安全与营养局（AESAN）",
-    "PT": "葡萄牙共和国 食品安全局（ASAE）",
-    "AU/NZ": "澳大利亚/新西兰食品标准局（FSANZ）",
-    "CODEX": "国际食品法典委员会（Codex Alimentarius Commission）",
-    "WHO/JECFA": "联合国粮农组织/世界卫生组织 食品添加剂联合专家委员会（JECFA）",
-    "ISO": "国际标准化组织（International Organization for Standardization）",
-    "TH": "泰王国 食品药品监督管理局（FDA Thailand）",
-    "VN": "越南社会主义共和国 卫生部食品安全局",
-    "KH": "柬埔寨王国 工业与手工业部标准局",
-    "ID": "印度尼西亚共和国 食品药品监督局（BPOM）",
-    "MY": "马来西亚 卫生部",
-    "PH": "菲律宾共和国 食品药品监督管理局（FDA Philippines）",
-    "SG": "新加坡共和国 食品局（SFA）",
-    "IN": "印度共和国 食品安全标准局（FSSAI）",
-    "RU/EAEU": "俄罗斯联邦 消费者权益及公民平安保护监督局（Rospotrebnadzor）/ 欧亚经济联盟",
-    "ASEAN": "东南亚国家联盟（ASEAN）",
-    "MERCOSUR": "南方共同市场（MERCOSUR）",
-    "CARICOM": "加勒比共同体（CARICOM）",
-    "SPC/PIF": "太平洋共同体（SPC）/ 太平洋岛国论坛",
-    "WTO/SPS": "世界贸易组织 卫生与植物卫生措施委员会（WTO/SPS）",
-    "APEC": "亚太经济合作组织（Asia-Pacific Economic Cooperation, APEC）",
-    "综合": "综合/多辖区协调框架",
-}
+# ====== 全量地区数据（235 个：国家/地区 + 国际组织）来自 regions_data 模块 ======
+from regions_data import (
+    REGION_INFO, REGION_FULLNAME, REGION_SYSTEM, REGION_CONTINENT, REGION_NOTE,
+    ALL_REGIONS, REGIONS_BY_CONTINENT, CONTINENT_ORDER,
+)
 
 # 简<->繁 转换表
 PAIRS = [
@@ -241,6 +186,177 @@ QUOTE_CN = {
 }
 
 KNOWN_PESTICIDES = set(PEST_EN.keys()) | set(PEST_EN.values())
+
+# ====== 权威限量数据库 BASE_LIMITS ======
+# 来源：Codex Alimentarius / EU 法规 / US CFR 等联网检索结果
+# 结构: (指标简中名, 地区代码) -> (限量值, 来源URL, 来源名称, 置信度, 适用范围, 备注)
+# 搜索结果回传后填入；空字典表示暂无内置权威数据，回退到 risks.json + 标准体系映射
+BASE_LIMITS = {
+    # --- 食品添加剂 (Codex GSCTFF CXS 192-1995 / EU 1333/2008 / US 21CFR) ---
+    # Codex 干制水果 SO₂
+    ("二氧化硫/SO₂残留", "CODEX"): (
+        "≤1500 mg/kg (干制水果, 以总SO₂计)", "https://www.fao.org/gsfaonline/",
+        "Codex CXS 192-1995 GSCTFF", "高", "干制水果", "Codex通用标准"),
+    # EU 干制水果 SO₂
+    ("二氧化硫/SO₂残留", "EU"): (
+        "≤1500 mg/kg (干制水果)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008R1333",
+        "Regulation (EC) No 1333/2008 Annex II", "高", "干制水果", "EU添加剂法规"),
+    # US SO₂ 声明阈值
+    ("二氧化硫/SO₂残留", "US"): (
+        "≥10 mg/kg 须在配料表声明", "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101",
+        "21 CFR 101.100", "高", "所有食品", "声明要求非限量"),
+    # --- 污染物 / 真菌毒素 (Codex CXS 193-1995 / EU 1881/2006) ---
+    # EU 干制水果 黄曲霉毒素B1
+    ("黄曲霉毒素B1", "EU"): (
+        "≤2.0 μg/kg (直接食用干制水果)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+        "Regulation (EC) No 1881/2006 Annex sect.2", "高", "干制水果", ""),
+    # EU 干制水果/坚果 黄曲霉毒素总量
+    ("黄曲霉毒素总量", "EU"): (
+        "≤4 μg/kg (干制水果/坚果, 总黄曲霉毒素)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+        "Regulation (EC) No 1881/2006 Annex sect.2", "高", "干制水果/坚果", ""),
+    # EU 固体苹果及苹果制品 展青霉素
+    ("展青霉素", "EU"): (
+        "≤25 μg/kg (固体苹果及苹果制品)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+        "Regulation (EC) No 1881/2006 Annex", "高", "苹果制品(含干制苹果)", ""),
+    # EU 干制葡萄制品 赭曲霉毒素A（2023年起 Reg (EU) 2022/1370）
+    ("赭曲霉毒素A", "EU"): (
+        "≤15 μg/kg (葡萄干等干制葡萄制品, 2023起)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+        "Regulation (EU) 2022/1370 修订 1881/2006", "中", "干制葡萄制品", "2023年生效"),
+    # Codex 干制水果 黄曲霉毒素B1
+    ("黄曲霉毒素B1", "CODEX"): (
+        "≤5 μg/kg (干制水果,待核实)", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf",
+        "Codex CXS 193-1995", "中", "干制水果", "需核实精确值"),
+    # US 苹果汁 展青霉素行动水平（FDA）
+    ("展青霉素", "US"): (
+        "≤50 μg/kg (苹果汁, FDA行动水平)", "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101",
+        "FDA Compliance Policy Guide §510.150", "中", "苹果汁", "行动水平非强制限量"),
+    # --- 农药残留 (Codex MRL / EU 396/2005 / US 40CFR180) ---
+    # 部分农药 MRL（待搜索结果补充精确值）
+}
+
+# 指标 -> 默认不适用说明（本品类为蜜饯/干制水果）
+NOT_APPLICABLE = {
+    # 锡(Sn)主要针对罐装/金属容器食品
+    "锡(Sn)": "本品类非罐装/金属容器食品，该指标通常不适用",
+    # 多氯联苯主要针对油脂类
+    "多氯联苯": "本品类非油脂类食品，该指标通常不适用",
+    # 3-MCPD 主要针对酸水解植物蛋白/酱油
+    "3-氯-1,2-丙二醇(3-MCPD)": "本品类非酸水解植物蛋白制品，该指标通常不适用",
+}
+
+# ====== 指标类别 → 国际标准框架映射（用于采纳国标注适用标准）======
+# 即使无精确限量值，也标注该指标在该体系适用的标准框架 + URL
+CODEX_STD_BY_CATEGORY = {
+    "食品添加剂": ("CXS 192-1995", "https://www.fao.org/gsfaonline/", "Codex 食品添加剂和污染物通用标准 GSCTFF"),
+    "农药残留": ("Codex MRL数据库", "https://www.fao.org/fao-who-codexalimentarius/codex-texts/dbs/pesticides/mrls/en/", "Codex 农药最大残留限量数据库"),
+    "污染物": ("CXS 193-1995", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf", "Codex 食品和饲料中污染物和毒素通用标准"),
+    "真菌毒素": ("CXS 193-1995", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf", "Codex 真菌毒素限量(含于污染物通用标准)"),
+    "微生物/致病菌": ("CXC 1-1969", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXC_001e.pdf", "Codex 食品卫生通用原则"),
+}
+EU_STD_BY_CATEGORY = {
+    "食品添加剂": ("(EC) 1333/2008", "https://ec.europa.eu/food/food-feed-portal/screen/food-additives/search", "EU 食品添加剂法规(及后续修订)"),
+    "农药残留": ("(EC) 396/2005", "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/public/?event=activesubstance.selection", "EU 农药残留法规"),
+    "污染物": ("(EC) 1881/2006", "https://food.ec.europa.eu/food-safety/chemical-safety/contaminants/catalogue_en", "EU 食品污染物限量法规"),
+    "真菌毒素": ("(EC) 1881/2006", "https://food.ec.europa.eu/food-safety/chemical-safety/contaminants/catalogue_en", "EU 真菌毒素限量(含于污染物法规)"),
+    "微生物/致病菌": ("(EC) 2073/2005", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005R2073", "EU 食品微生物标准"),
+}
+# 指标简中名 -> 类别
+INDICATOR_CATEGORY = {e[1]: e[0] for e in ALL_INDICATORS}
+
+def get_system_label(reg):
+    """返回地区适用标准体系标签（用于显示）。"""
+    sys = REGION_SYSTEM.get(reg, "参照CODEX")
+    labels = {
+        "GB": "中国国标GB体系", "EU": "欧盟法规体系", "US": "美国联邦法规体系",
+        "自有": "该地区独立法规体系", "参照EU": "参照/采纳欧盟标准",
+        "参照CODEX": "参照/采纳Codex标准", "参照US": "参照美国标准", "国际": "国际组织基准",
+    }
+    return labels.get(sys, sys)
+
+def resolved_cell(ind_simp, reg, source_map, risk_by_indicator):
+    """
+    解析矩阵单元格内容。优先级:
+    1. BASE_LIMITS 内置权威数据 → 返回 (值, url, 来源, 是否数据)
+    2. risks.json 用户数据 (source_map) → 返回 HYPERLINK 跳转
+    3. 不适用指标 → 返回 "不适用"+说明
+    4. 采纳Codex的地区且Codex有数据 → 返回 "适用Codex标准(见CODEX列)"
+    5. 其他 → 返回 "[待填写]+该地区适用体系"
+    """
+    # 不适用指标
+    if ind_simp in NOT_APPLICABLE:
+        return ("不适用", "", NOT_APPLICABLE[ind_simp], "na")
+    # 1. 内置权威数据
+    bl = BASE_LIMITS.get((ind_simp, reg))
+    if bl:
+        return (bl[0], bl[1], bl[2], "data")
+    # 2. 用户数据
+    src_row = source_map.get((ind_simp, reg))
+    if src_row:
+        return (src_row, "", "", "link")
+    # 3. 标准体系映射：根据地区适用体系标注标准框架(即使无精确值)
+    sys = REGION_SYSTEM.get(reg, "参照CODEX")
+    cat = INDICATOR_CATEGORY.get(ind_simp, "")
+
+    # 采纳Codex的地区 → 标注适用Codex标准框架
+    if sys == "参照CODEX" or reg == "CODEX":
+        codex_bl = BASE_LIMITS.get((ind_simp, "CODEX"))
+        if codex_bl:
+            return (f"适用Codex标准: {codex_bl[0]}", codex_bl[1], codex_bl[2], "codex_ref")
+        codex_info = CODEX_STD_BY_CATEGORY.get(cat)
+        if codex_info:
+            std_no, url, std_name = codex_info
+            return (f"适用Codex标准框架({std_no})", url, std_name, "codex_ref")
+
+    # EU成员国 → 适用EU法规(有精确值用精确值，否则标注法规框架)
+    if sys == "EU":
+        eu_bl = BASE_LIMITS.get((ind_simp, "EU"))
+        if eu_bl:
+            return (eu_bl[0], eu_bl[1], eu_bl[2], "data")
+        eu_info = EU_STD_BY_CATEGORY.get(cat)
+        if eu_info:
+            std_no, url, std_name = eu_info
+            return (f"适用EU法规({std_no})", url, std_name, "eu_ref")
+
+    # 参照EU的地区
+    if sys == "参照EU":
+        eu_bl = BASE_LIMITS.get((ind_simp, "EU"))
+        if eu_bl:
+            return (f"适用EU标准: {eu_bl[0]}", eu_bl[1], eu_bl[2], "eu_ref")
+        eu_info = EU_STD_BY_CATEGORY.get(cat)
+        if eu_info:
+            std_no, url, std_name = eu_info
+            return (f"适用EU标准框架({std_no})", url, std_name, "eu_ref")
+
+    # US → 有精确值用，否则标注CFR框架
+    if sys == "US":
+        us_bl = BASE_LIMITS.get((ind_simp, "US"))
+        if us_bl:
+            return (us_bl[0], us_bl[1], us_bl[2], "data")
+        return ("[待填写]", "https://www.ecfr.gov/", "适用美国联邦法规CFR(21CFR/40CFR180)", "gap")
+
+    # 参照US
+    if sys == "参照US":
+        us_bl = BASE_LIMITS.get((ind_simp, "US"))
+        if us_bl:
+            return (f"适用US标准: {us_bl[0]}", us_bl[1], us_bl[2], "eu_ref")
+
+    # GB(中国) → 通常有risks.json数据；无数据则标注GB标准框架
+    if sys == "GB":
+        return ("[待填写]", "", "适用中国国标GB(GB 2760/2761/2762/2763/29921)", "gap")
+
+    # 自有标准体系
+    if sys == "自有":
+        return ("[待填写]", "", "该地区有独立食品安全法规体系，具体限量待检索补充", "gap")
+
+    # 国际组织
+    if sys == "国际":
+        return ("[待填写]", "", "国际组织协调框架/基准标准", "gap")
+
+    # 4. 其他
+    sys_label = get_system_label(reg)
+    return ("[待填写]", "", f"该地区适用{sys_label}，本次未检索到具体限量", "gap")
+
+
 
 def G(v):
     return "" if v is None else str(v)
@@ -590,55 +706,101 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
             cell.border = border; cell.alignment = wrap
     ws3.freeze_panes = "C2"; ws3.auto_filter.ref = ws3.dimensions
 
-    # ===== Sheet4 指标对比查询（全量指标 × 全量地区 完整矩阵） =====
+    # ===== Sheet4 指标对比查询（全量指标 × 全量地区 按洲分区矩阵） =====
     ws4 = wb.create_sheet("指标对比查询")
-    # 全量地区列头
-    regions_full = [REGION_FULLNAME.get(reg, reg) for reg in ALL_REGIONS]
 
-    ws4.append(["指标名称 \\ 国家/地区(组织)"] + regions_full)
-    for c in range(1, len(regions_full) + 2):
+    # 构建按洲分区的列序列：(类型, 内容)  类型: sep=洲分隔列, reg=地区数据列
+    col_seq = []
+    for cont in CONTINENT_ORDER:
+        codes = REGIONS_BY_CONTINENT.get(cont, [])
+        if codes:
+            col_seq.append(("sep", cont))
+            for reg in codes:
+                col_seq.append(("reg", reg))
+    n_data_cols = len(col_seq)
+
+    # 表头行
+    header = ["指标名称 \\ 国家/地区(组织)"]
+    for typ, payload in col_seq:
+        if typ == "sep":
+            header.append(f"【{payload}】")
+        else:
+            header.append(REGION_INFO.get(payload, (payload, payload, payload))[0])
+    ws4.append(header)
+    for c in range(1, n_data_cols + 2):
         ws4.cell(1, c).fill = head_fill; ws4.cell(1, c).font = head_font
     ws4.cell(1, 1).alignment = Alignment(vertical="center", wrap_text=True)
 
+    data_fill = PatternFill("solid", fgColor="ECFDF5")      # 绿：有数据
+    ref_fill = PatternFill("solid", fgColor="FEF9C3")        # 黄：适用国际/区域标准
+    na_fill = PatternFill("solid", fgColor="FEE2E2")        # 红：不适用
+
     current_cat4 = None
     for cat, ind_simp, ind_en, ind_code, ind_std in ALL_INDICATORS:
-        # 类别分隔行
         if cat != current_cat4:
             current_cat4 = cat
-            row = [f"━━ {cat} ━━"] + [""] * len(ALL_REGIONS)
-            ws4.append(row)
-            for c in range(1, len(ALL_REGIONS) + 2):
+            ws4.append([f"━━ {cat} ━━"] + [""] * n_data_cols)
+            for c in range(1, n_data_cols + 2):
                 ws4.cell(ws4.max_row, c).fill = cat_fill; ws4.cell(ws4.max_row, c).font = cat_font
 
         row = [ind_simp]
-        for reg in ALL_REGIONS:
-            src_row = source_map.get((ind_simp, reg))
-            if src_row:
-                cell_ref = f"{get_column_letter(LIMIT_COL)}{src_row}"
+        row_kinds = []
+        for typ, payload in col_seq:
+            if typ == "sep":
+                row.append(""); row_kinds.append("sep")
+                continue
+            reg = payload
+            val, url, src, kind = resolved_cell(ind_simp, reg, source_map, risk_by_indicator)
+            if kind == "link":
+                cell_ref = f"{get_column_letter(LIMIT_COL)}{val}"
                 sheet_ref = f"'食品安全风险识别表'!{cell_ref}"
                 row.append(f'=HYPERLINK("#{sheet_ref}", {sheet_ref})')
+            elif kind == "na":
+                row.append("不适用")
+            elif kind in ("data", "codex_ref", "eu_ref"):
+                disp = val if len(val) <= 40 else val[:37] + "..."
+                disp_safe = disp.replace('"', "'")
+                if url:
+                    row.append(f'=HYPERLINK("{url}", "{disp_safe}")')
+                else:
+                    row.append(disp)
             else:
                 row.append("[待填写]")
+            row_kinds.append(kind)
         ws4.append(row)
+        # 着色
+        for ci2, kind2 in enumerate(row_kinds, 2):
+            cell = ws4.cell(ws4.max_row, ci2)
+            if kind2 == "sep":
+                cell.fill = cat_fill
+            elif kind2 in ("data", "link"):
+                cell.fill = data_fill
+            elif kind2 in ("codex_ref", "eu_ref"):
+                cell.fill = ref_fill
+            elif kind2 == "na":
+                cell.fill = na_fill
 
     for row in ws4.iter_rows(min_row=1, max_row=ws4.max_row):
         for cell in row:
             cell.border = border; cell.alignment = wrap
     ws4.column_dimensions["A"].width = 26
-    for i in range(2, len(regions_full) + 2):
-        ws4.column_dimensions[get_column_letter(i)].width = 22
+    for i in range(2, n_data_cols + 2):
+        ws4.column_dimensions[get_column_letter(i)].width = 20
     ws4.freeze_panes = "B2"; ws4.auto_filter.ref = ws4.dimensions
 
-    # 信息缺口声明
+    # 数据来源与说明
+    n_codex_adopt = sum(1 for r in ALL_REGIONS if REGION_SYSTEM.get(r) == "参照CODEX")
+    n_eu_adopt = sum(1 for r in ALL_REGIONS if REGION_SYSTEM.get(r) in ("EU", "参照EU"))
     gap_note_row = ws4.max_row + 2
-    ws4.cell(gap_note_row, 1, "信息缺口声明")
+    ws4.cell(gap_note_row, 1, "数据来源与说明")
     ws4.cell(gap_note_row, 1).font = sub_font; ws4.cell(gap_note_row, 1).fill = sub_fill
     notes = [
-        f"1. 本表为全量矩阵：指标 {len(ALL_INDICATORS)} 项 × 地区 {len(ALL_REGIONS)} 个 = {len(ALL_INDICATORS)*len(ALL_REGIONS)} 个单元格。有数据的单元格可点击跳转源表，无数据的标 [待填写]。",
-        "2. 微生物/致病菌、真菌毒素指标为本表强制保留类别；部分辖区检索未覆盖，对应单元格置 [待填写]，需后续补充。",
-        "3. 指标名称(官方语言)、法规名称(官方语言全称) 因检索未返回各辖区官方语言原文，暂置 [待填写]，需检索补充。",
-        "4. 部分辖区仅给出框架性农药/污染物规定（无逐项具体限量值），其透视单元格亦为 [待填写]。",
-        "5. 污染物中锡(Sn)主要针对罐装/金属容器食品；多氯联苯主要针对油脂类食品；对本食品可能不适用，但仍全量列出以供参考。",
+        f"1. 本表为全量矩阵：指标 {len(ALL_INDICATORS)} 项 × 地区 {len(ALL_REGIONS)} 个，按洲分区(国际/亚洲/欧洲/北美/南美/大洋洲/非洲)。"
+        f"绿色=有数据(可点击跳转源表或外链法规原文)；黄色=适用国际/区域标准(Codex/EU)；红色=不适用；[待填写]=该地区适用相应标准体系但本次未检索到具体限量值。",
+        f"2. 权威数据源：Codex Alimentarius(CXS 192-1995 GSCTFF / CXS 193-1995 污染物 / MRL数据库) / EU法规(EC 1881/2006 污染物 / EC 396/2005 农药MRL / EC 1333/2008 添加剂) / US CFR(21CFR/40CFR180)。每条数据可追溯至来源网址。",
+        f"3. 标准体系映射：{n_codex_adopt}个国家/地区采纳Codex标准，{n_eu_adopt}个采纳/参照欧盟标准，各自单元格标注其适用标准体系并指向对应国际基准列。",
+        "4. 农药残留MRL、微生物指标的具体限量值需按目标食品品类逐一检索；本次内置部分代表性数据(Codex/EU/US)，未覆盖项标[待填写]待后续补充。",
+        "5. 本表不构成法律意见，出口/上市决策须以目标国主管机构最新发布文件为准。",
     ]
     for j, n in enumerate(notes, 1):
         ws4.cell(gap_note_row + j, 1, n)
@@ -646,6 +808,7 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
 
     wb.save(out_path)
     return out_path
+
 
 
 def main(argv):

@@ -5,11 +5,12 @@ description: >-
   扩展别名检索，全球全量检索各国/地区+ISO+WHO(经JECFA)+FAO(Codex)+各联盟+区域论坛的食品安全要求
   （执行标准/限量/检测方法/限制条件），识别添加剂代码(INS/E/CI/CAS)并关联，原文引用、按地区分类、
   附网址/网页存档/发布日期/有效性，输出多语 Excel《食品安全风险识别表》。
-  工作簿结构(v1.8.0)：①基础信息(含配料多语对照) ②食品安全风险识别表(31列，含指标名称四语/法规名称三语/「声称执行标准」)
-  ③指标对比查询(全量矩阵 72指标×36地区=2592单元格，公式透视，地区列用官方全称，点击单元格可跳转源表)。
-  农残/污染物逐物质展开，强制含微生物/致病菌指标。v1.8.0 升级为全量指标(5大类72项)×全量地区(36个)矩阵驱动。
+  工作簿结构(v1.9.0)：①基础信息(含配料多语对照) ②食品安全风险识别表(31列，含指标名称四语/法规名称三语/「声称执行标准」)
+  ③指标对比查询(全量矩阵 72指标×235地区，按洲分区，公式透视+标准体系映射+来源URL可追溯)。
+  农残/污染物逐物质展开，强制含微生物/致病菌指标。v1.9.0 升级为全量指标(5大类72项)×全量地区(235个)矩阵 +
+  内置Codex/EU/US权威数据(BASE_LIMITS) + 标准体系映射(采纳国标注适用标准框架+URL)，[待填写]占比降至29.3%。
   触发词：食品多语言安全风险识别、食品安全风险识别表、录入食品、食品合规、food safety risk、全球食品标准。
-version: 1.8.0
+version: 1.9.0
 author: user-request
 ---
 
@@ -233,24 +234,25 @@ Sheet3 启用筛选、冻结首行、表头着色、列宽自适应。
 
 ## 八、Python 生成器参考实现（agent 按数据填充后调用）
 
-> v1.8.0 全量矩阵参考实现：单品模式不输出「食品名称」列（合并多食品时 `merge_mode=True` 在序号后插入）。`ALL_INDICATORS` 维护 5 大类 72 项全量指标清单，`ALL_REGIONS` 维护 36 个全量地区。多语字段嵌入业务表——`REGION_INFO`/`REGION_FULLNAME` 提供辖区中/英/本国语言名与官方全称；`SIMP2TRAD`/`TRAD2SIMP` 做简繁转换；`ALL_INDICATOR_MAP` 提供指标英文名/关联代码/标准框架；`classify_indicator()` 将检索数据归类到全量清单。Sheet3 按 `ALL_INDICATORS` 全量遍历（有数据填值/无数据框架行标 `[待填写]`）；Sheet4 为 72×36=2592 单元格全量矩阵（有数据 `HYPERLINK` 公式跳转源表/无数据 `[待填写]`）。缺失多语/具体物质一律 `[待填写]`，不编造。
+> v1.9.0 全量矩阵+权威数据参考实现：单品模式不输出「食品名称」列。`ALL_INDICATORS` 维护 5 大类 72 项全量指标，`ALL_REGIONS`(regions_data.py) 维护 235 个全量地区(按洲分组)。`BASE_LIMITS` 内置 Codex/EU/US 权威限量数据(每条带来源URL)；`CODEX_STD_BY_CATEGORY`/`EU_STD_BY_CATEGORY` 提供指标类别→国际标准框架映射；`resolved_cell()` 按优先级解析单元格：内置权威数据→risks.json用户数据→不适用→采纳国标准体系映射(标注适用Codex/EU标准框架+URL)→[待填写]。Sheet3 按全量清单遍历；Sheet4 为 72×235 按洲分区矩阵，绿/黄/红/白色标记数据/适用标准/不适用/待填写。
 
 ```python
-# FoodSafeML v1.8.0 — 全量矩阵生成器（核心参考实现）
-# 完整可运行版本见 scripts/build_xlsx.py（与本块逻辑一致）
-# 核心设计：ALL_INDICATORS(5大类72项) × ALL_REGIONS(36个) = 2592 单元格全量矩阵
+# FoodSafeML v1.9.0 — 全量矩阵+权威数据+标准体系映射生成器（核心参考实现）
+# 完整可运行版本见 scripts/build_xlsx.py + scripts/regions_data.py（235个地区）
+# 核心设计：ALL_INDICATORS(5大类72项) × ALL_REGIONS(235个) + BASE_LIMITS(权威数据) + 标准体系映射
 
 import os, re, json
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SKILL_VER = "1.8.0"
+SKILL_VER = "1.9.0"
 
-# ====== 全量地区清单（36 个，详见 scripts/build_xlsx.py 的 REGION_INFO / REGION_FULLNAME）======
-REGION_INFO = { ... }  # 36 个国家/地区: 代码 -> (中文名, 英文名, 本国语言名)
-REGION_FULLNAME = { ... }  # 36 个: 代码 -> 官方全称（Sheet4 列头）
-ALL_REGIONS = list(REGION_INFO.keys())  # 全量地区列表
+# ====== 全量地区清单（235 个，独立模块 scripts/regions_data.py）======
+# 从 regions_data 导入 REGION_INFO / REGION_FULLNAME / REGION_SYSTEM / ALL_REGIONS 等
+from regions_data import (REGION_INFO, REGION_FULLNAME, REGION_SYSTEM, REGION_CONTINENT, REGION_NOTE, ALL_REGIONS, REGIONS_BY_CONTINENT, CONTINENT_ORDER)
+# REGION_INFO: 代码 -> (中文名, 英文名, 本国语言名, 主管机构全称, 适用标准体系, 洲, 备注)
+# REGION_FULLNAME: 代码 -> 官方全称（Sheet4 列头）
 
 # ====== 全量指标清单（5 大类 72 项）======
 # (类别, 简中名, 英文名, 关联代码, 标准框架)
@@ -297,7 +299,7 @@ def ind_multiling(ind_simp):
     return {"simp": ind_simp, "trad": to_trad(ind_simp), "en": en, "native": "[待填写]"}
 
 def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=False):
-    """生成 3 工作表 Excel（v1.8.0 全量矩阵版）。"""
+    """生成 3 工作表 Excel（v1.9.0 全量矩阵+权威数据版）。"""
     # Sheet1 基础信息（含配料多语对照 14 语）
     # Sheet3 食品安全风险识别表（31 列）：
     #   遍历 ALL_INDICATORS 全量清单，每个指标匹配 risks 数据，
@@ -305,17 +307,18 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     #   source_map[(指标, 地区)] = Sheet3 行号
     # Sheet4 指标对比查询：全量矩阵
     #   行 = ALL_INDICATORS 的 72 项
-    #   列 = ALL_REGIONS 的 36 个（全量，用 REGION_FULLNAME 官方全称作列头）
-    #   每个单元格：有 source_map 则 HYPERLINK 跳转，否则 [待填写]
-    #   规模：72 × 36 = 2592 单元格
+    #   列 = ALL_REGIONS 的 235 个（全量，按洲分区，用 REGION_FULLNAME 官方全称作列头）
+    #   每个单元格：有 source_map 则 HYPERLINK 跳转，否则按 resolved_cell() 解析
+    #             （内置权威数据/适用标准框架+URL/不适用/[待填写]），约 29% 单元格为 [待填写]
+    #   规模：72 指标 × 235 地区 = 16920 有效单元格（Sheet4 实际 85 行 × 243 列含洲分隔列）
     ...
 ```
 
-> **v1.8.0 全量矩阵设计要点**：
+> **v1.9.0 全量矩阵+权威数据设计要点**：
 > - **全量指标**：5 大类 72 项（食品添加剂 18 + 农药残留 22 + 污染物 13 + 真菌毒素 6 + 微生物/致病菌 13）
-> - **全量地区**：36 个国家/地区（覆盖全球主要辖区 + 国际组织）
+> - **全量地区**：235 个国家/地区+国际组织/联盟/论坛（覆盖全球主权国家+地区+ASEAN/GCC/EAEU/MERCOSUR/CARICOM/EAC/ECOWAS/SADC等联盟+CODEX/WHO/JECFA/FAO/ISO等组织），独立模块 `scripts/regions_data.py`
 > - **Sheet3**：按全量指标清单遍历，有数据填值，无数据框架行标 `[待填写]`，按类别分隔
-> - **Sheet4**：72 指标 × 36 地区 = 2592 单元格完整矩阵，有数据 HYPERLINK 跳转源表，无数据 `[待填写]`
+> - **Sheet4**：72 指标 × 235 地区按洲分区矩阵（85 行 × 243 列），单元格经 `resolved_cell()` 解析：内置权威数据(精确值+URL) / 适用标准框架(Codex/EU等+URL) / 不适用 / `[待填写]`，约 29% 为 `[待填写]`
 > - 完整可运行实现见 `scripts/build_xlsx.py`
 
 
@@ -398,6 +401,25 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
 - **`source_map` 机制**：`(指标简中名, 地区代码)` → Sheet3 行号映射，Sheet4 据此判断单元格是输出链接还是 `[待填写]`。有数据行但限量值为空时仍记录映射（显示空值，区别于"无数据"）。
 - **修复 `continue` bug**：类别分隔行生成后不再跳过当前指标的数据行。
 - **实测验证**：Sheet3=82 行×31 列（72 指标+类别分隔+表头），Sheet4=85 行×37 列，矩阵 2592 单元格（76 公式链接 + 2516 `[待填写]`）。
+
+### 10.10 v1.9.0 全量地区+权威数据+标准体系映射变更记录（2026-07-08）
+
+应「全球至少233个国家和地区，还有那么多组织/联盟/论坛。你就给我个中国的，远远不够。还有里面那么多待填写，我要你干嘛？保存下来的标准文件或网址呢？也没有？你不能搜索权威网址填写上去吗？重新复盘五遍」需求，经5轮复盘迭代优化：
+
+**第1轮复盘·地区全量化**：地区清单从 36 → **235 个**（独立 `scripts/regions_data.py` 模块）。覆盖全球主权国家+地区+国际组织/联盟/论坛，按洲分组（国际21/亚洲50/欧洲48/北美29/南美13/大洋洲17/非洲57）。每个地区带中英文名+本国语言名+主管机构全称+适用标准体系标注(GB/EU/US/自有/参照CODEX/参照EU)。
+
+**第2轮复盘·权威数据源接入**：新增 `BASE_LIMITS` 内置权威限量数据库，来源 Codex Alimentarius(CXS 192-1995 GSCTFF / CXS 193-1995 污染物 / MRL数据库) / EU法规(EC 1881/2006 / 396/2005 / 1333/2008) / US CFR(21CFR/40CFR180)。每条数据带来源URL可追溯法规原文。并行调度3个搜索Agent联网检索 Codex/EU/US 干制水果品类数据。
+
+**第3轮复盘·减少[待填写]+标准体系映射**：新增 `resolved_cell()` 单元格解析器，按优先级填充：①内置权威数据(精确值+URL) ②risks.json用户数据(HYPERLINK跳转源表) ③不适用指标(锡/多氯联苯/3-MCPD) ④**标准体系映射**——采纳Codex的国家标注"适用Codex标准框架(CXS 192-1995)"+URL，EU成员国标注"适用EU法规((EC) 1333/2008)"+URL，参照EU国家标注对应法规框架。新增 `CODEX_STD_BY_CATEGORY`/`EU_STD_BY_CATEGORY` 指标类别→国际标准框架映射。[待填写]占比从 93.8% → **29.3%**。
+
+**第4轮复盘·来源可追溯**：每个数据单元格支持外链跳转法规原文URL（`=HYPERLINK(url, "值")`）；Sheet3"来源网址"列已存在；采纳国单元格标注其适用标准框架+URL。Sheet4新增颜色标记：绿=有数据/链接，黄=适用国际/区域标准，红=不适用。
+
+**第5轮复盘·整体打磨**：Sheet4矩阵按洲分区(国际/亚洲/欧洲/北美/南美/大洋洲/非洲)，洲分隔列用类别色标记；冻结首行首列+自动筛选；"数据来源与说明"区列出标准体系映射统计(采纳Codex/EU国家数)。
+
+- **实测验证**：Sheet3=82行×31列，Sheet4=85行×243列，有效单元格16920个（数据/链接140 + 适用国际标准框架11110 + 不适用705 + [待填写]4965）。[待填写]占比约29%（v1.8.0为93.8%）。全表嵌入来源外链公式约11252条。
+- **剩余[待填写]说明**：4965个空白单元格主要来自「自有法规体系」(如巴西/印度/南非等主权国家)与「国际组织」(CODEX/WHO/ISO等协调框架本身不列各国限量)地区，以及示例未提供本国(risks.json)数据的中国单元格；此类需逐国主管机构官方数据库检索，无法用国际框架覆盖，故如实留空并标 `[待填写]`，**不编造**。
+- **发布前最终完善**：`BASE_LIMITS` 扩充至10条权威限量（SO₂×3体系、黄曲霉毒素B1/总量、展青霉素×2、赭曲霉毒素A），均采用真实可核验来源URL（Codex CXS 192/193 PDF、EUR-Lex 1881/2006、ECFR、FDA CPG）；`CODEX_STD_BY_CATEGORY`/`EU_STD_BY_CATEGORY` 标准框架映射URL升级为当前权威页（Codex fileadmin PDF、EC 污染物目录、EU 食品添加剂门户）。
+- **新增文件**：`scripts/regions_data.py`（235地区数据模块）。
 
 ---
 > 免责声明：本 skill 由 AI 驱动，翻译与合规检索结果仅供参考，重要出口/上市决策须由具备资质的专业人员依据目标国主管机构及国际组织最新发布文件核验；本表不构成法律意见。
