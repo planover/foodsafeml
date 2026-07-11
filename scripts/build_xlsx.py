@@ -115,6 +115,21 @@ ALL_INDICATORS = [
     ("污染物", "N-二甲基亚硝胺", "N-Nitrosodimethylamine (NDMA)", "CAS 62-75-9", "GB 2762-2025"),
     ("污染物", "多氯联苯", "Polychlorinated biphenyls (PCBs)", "", "GB 2762-2025"),
     ("污染物", "3-氯-1,2-丙二醇(3-MCPD)", "3-Monochloropropane-1,2-diol", "CAS 96-24-2", "GB 2762-2025"),
+    # C+. 污染物扩充（重金属/其他污染物/兽药/塑化剂等）
+    ("污染物", "铝(Al)", "Aluminium (Al)", "CAS 7429-90-5", "GB 2762-2025"),
+    ("污染物", "氟(F)", "Fluoride (F)", "CAS 16984-48-8", "GB 2762-2025"),
+    ("污染物", "多环芳烃(PAH4)", "Polycyclic aromatic hydrocarbons (PAH4)", "", "GB 2762-2025"),
+    ("污染物", "二噁英类(PCDD/F)", "Dioxins (PCDD/F)", "", "GB 2762-2025"),
+    ("污染物", "邻苯二甲酸二(2-乙基己基)酯(DEHP)", "Di(2-ethylhexyl) phthalate (DEHP)", "CAS 117-81-7", "GB 31604-2016"),
+    ("污染物", "邻苯二甲酸二丁酯(DBP)", "Dibutyl phthalate (DBP)", "CAS 84-74-2", "GB 31604-2016"),
+    ("污染物", "邻苯二甲酸二异壬酯(DINP)", "Diisononyl phthalate (DINP)", "", "GB 31604-2016"),
+    ("污染物", "双酚A(BPA)", "Bisphenol A (BPA)", "CAS 80-05-7", "GB 31604-2016"),
+    ("污染物", "三聚氰胺", "Melamine", "CAS 108-78-1", "GB 29660-2013"),
+    ("污染物", "孔雀石绿", "Malachite green", "CAS 569-64-2", "农业农村部公告"),
+    ("污染物", "氯霉素", "Chloramphenicol", "CAS 56-75-7", "GB 29685-2013"),
+    ("污染物", "硝基呋喃代谢物", "Nitrofuran metabolites (AOZ/AMOZ/SEM/AHD)", "", "GB 31650-2019"),
+    ("污染物", "己烯雌酚", "Diethylstilbestrol (DES)", "CAS 56-53-1", "GB 31650-2019"),
+    ("污染物", "莱克多巴胺", "Ractopamine", "CAS 97825-25-7", "GB 31650-2019"),
     # D. 真菌毒素（GB 2761）
     ("真菌毒素", "黄曲霉毒素B1", "Aflatoxin B1", "CAS 1162-65-8", "GB 2761"),
     ("真菌毒素", "黄曲霉毒素M1", "Aflatoxin M1", "CAS 6795-23-9", "GB 2761"),
@@ -123,6 +138,12 @@ ALL_INDICATORS = [
     ("真菌毒素", "展青霉素", "Patulin", "CAS 149-29-1", "GB 2761"),
     ("真菌毒素", "赭曲霉毒素A", "Ochratoxin A", "CAS 303-47-9", "GB 2761"),
     ("真菌毒素", "玉米赤霉烯酮", "Zearalenone", "CAS 17924-92-4", "GB 2761"),
+    # D+. 真菌毒素扩充
+    ("真菌毒素", "伏马菌素B1", "Fumonisin B1", "CAS 116355-83-0", "GB 2761"),
+    ("真菌毒素", "伏马菌素(总量)", "Fumonisins total (B1+B2)", "", "GB 2761"),
+    ("真菌毒素", "T-2毒素", "T-2 toxin", "CAS 21259-20-1", "GB 2761"),
+    ("真菌毒素", "HT-2毒素", "HT-2 toxin", "CAS 26934-87-2", "GB 2761"),
+    ("真菌毒素", "杂色曲霉素", "Sterigmatocystin", "CAS 10048-13-2", "GB 2761"),
     # E. 微生物/致病菌（GB 29921-2021 + GB 14884-2016）
     ("微生物/致病菌", "菌落总数", "Aerobic plate count (APC)", "", "GB 14884-2016"),
     ("微生物/致病菌", "大肠菌群", "Coliforms", "", "GB 14884-2016"),
@@ -137,6 +158,43 @@ ALL_INDICATORS = [
     ("微生物/致病菌", "副溶血性弧菌", "Vibrio parahaemolyticus", "", "GB 29921-2021"),
     ("微生物/致病菌", "克罗诺杆菌属", "Cronobacter spp.", "", "GB 29921-2021"),
     ("微生物/致病菌", "志贺氏菌", "Shigella spp.", "", "GB 29921-2021"),
+    # E+. 微生物/致病菌扩充
+    ("微生物/致病菌", "空肠弯曲菌", "Campylobacter jejuni", "", "GB 29921-2021"),
+    ("微生物/致病菌", "产气荚膜梭菌", "Clostridium perfringens", "", "GB 29921-2021"),
+    ("微生物/致病菌", "肉毒梭菌", "Clostridium botulinum", "", "GB 29921-2021"),
+    ("微生物/致病菌", "创伤弧菌", "Vibrio vulnificus", "", "GB 29921-2021"),
+    ("微生物/致病菌", "小肠结肠炎耶尔森菌", "Yersinia enterocolitica", "", "GB 29921-2021"),
+    ("微生物/致病菌", "铜绿假单胞菌", "Pseudomonas aeruginosa", "", "GB 19298-2014"),
+    ("微生物/致病菌", "肠球菌", "Enterococcus spp.", "", "GB 29921-2021"),
+    # F. 理化指标（质量/成分指标，按品类标准 GB 5009 系列等）
+    ("理化指标", "水分", "Moisture", "", "GB 5009.3"),
+    ("理化指标", "灰分", "Ash", "", "GB 5009.4"),
+    ("理化指标", "蛋白质", "Protein", "", "GB 5009.5"),
+    ("理化指标", "脂肪(粗脂肪)", "Fat (crude fat)", "", "GB 5009.6"),
+    ("理化指标", "总糖", "Total sugar", "", "GB 5009.8"),
+    ("理化指标", "还原糖", "Reducing sugar", "", "GB 5009.7"),
+    ("理化指标", "pH值", "pH", "", "GB 5009.237"),
+    ("理化指标", "总酸", "Total acidity", "", "GB 12456"),
+    ("理化指标", "酸价", "Acid value", "", "GB 5009.229"),
+    ("理化指标", "过氧化值", "Peroxide value", "", "GB 5009.227"),
+    ("理化指标", "羰基价", "Carbonyl value", "", "GB 5009.230"),
+    ("理化指标", "极性组分", "Polar compounds", "", "GB 5009.202"),
+    ("理化指标", "挥发性盐基氮(TVB-N)", "Total volatile basic nitrogen (TVB-N)", "", "GB 5009.228"),
+    ("理化指标", "组胺", "Histamine", "", "GB 5009.208"),
+    ("理化指标", "三甲胺氮", "Trimethylamine nitrogen", "", "GB 5009.228"),
+    ("理化指标", "氯化钠(食盐)", "Sodium chloride (salt)", "", "GB 5009.44"),
+    ("理化指标", "溶剂残留", "Solvent residue", "", "GB 5009.262"),
+    # G. 感官指标（依具体产品标准感官要求评定，非地区性限量）
+    ("感官指标", "色泽", "Color", "", "产品标准感官要求"),
+    ("感官指标", "气味", "Odor / aroma", "", "产品标准感官要求"),
+    ("感官指标", "滋味", "Taste / flavour", "", "产品标准感官要求"),
+    ("感官指标", "组织状态", "Texture / consistency", "", "产品标准感官要求"),
+    ("感官指标", "杂质", "Extraneous matter", "", "产品标准感官要求"),
+    ("感官指标", "异物", "Foreign matter", "", "产品标准感官要求"),
+    ("感官指标", "霉变(可见霉斑)", "Visible mould / spoilage", "", "产品标准感官要求"),
+    ("感官指标", "虫蛀/活虫", "Insect damage / live insects", "", "产品标准感官要求"),
+    ("感官指标", "完整率(破碎率)", "Wholeness / broken rate", "", "产品标准感官要求"),
+    ("感官指标", "饱满度", "Plumpness", "", "产品标准感官要求"),
 ]
 # 全量指标名 -> (类别, 英文名, 代码, 标准框架)
 ALL_INDICATOR_MAP = {e[1]: e for e in ALL_INDICATORS}
@@ -227,6 +285,19 @@ BASE_LIMITS = {
     ("展青霉素", "US"): (
         "≤50 μg/kg (苹果汁, FDA行动水平)", "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101",
         "FDA Compliance Policy Guide §510.150", "中", "苹果汁", "行动水平非强制限量"),
+    # --- 污染物 重金属 (Codex CXS 193-1995 / EU 2023/915) ---
+    ("铅(Pb)", "CODEX"): (
+        "≤0.1 mg/kg (水果, CXS 193-1995)", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf",
+        "Codex CXS 193-1995", "高", "水果(干制水果按水果计)", ""),
+    ("铅(Pb)", "EU"): (
+        "≤0.10 mg/kg (水果, (EU) 2023/915 附件3.1.17)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0915",
+        "Regulation (EU) 2023/915 Annex III", "高", "水果(干制水果按水果计)", ""),
+    ("镉(Cd)", "EU"): (
+        "≤0.05 mg/kg (水果); ≤0.20 mg/kg (树坚果) ((EU) 2023/915 附件3.2)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0915",
+        "Regulation (EU) 2023/915 Annex III", "高", "水果/树坚果", ""),
+    ("苯并[a]芘", "EU"): (
+        "≤2.0 μg/kg (一般食品, (EU) 2023/915 附件4)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0915",
+        "Regulation (EU) 2023/915 Annex IV", "中", "一般食品(干制水果可参照)", "熏制肉/油脂等有更高专限量"),
     # --- 农药残留 (EU 396/2005 / US 40CFR180) ---
     # 芒果干相关农药 MRL（precise-search 联网核实, 2026-07；均附权威来源）
     # US 吡虫啉（芒果）
@@ -265,6 +336,8 @@ CODEX_STD_BY_CATEGORY = {
     "污染物": ("CXS 193-1995", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf", "Codex 食品和饲料中污染物和毒素通用标准"),
     "真菌毒素": ("CXS 193-1995", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf", "Codex 真菌毒素限量(含于污染物通用标准)"),
     "微生物/致病菌": ("CXC 1-1969", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXC_001e.pdf", "Codex 食品卫生通用原则"),
+    "理化指标": ("Codex 商品标准", "https://www.fao.org/fao-who-codexalimentarius/codex-texts/gsisi/en/", "Codex 商品标准(理化质量指标, 按品类)"),
+    "感官指标": ("CXC 1-1969", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXC_001e.pdf", "Codex 食品卫生通用原则(感官与卫生要求)"),
 }
 EU_STD_BY_CATEGORY = {
     "食品添加剂": ("(EC) 1333/2008", "https://ec.europa.eu/food/food-feed-portal/screen/food-additives/search", "EU 食品添加剂法规(及后续修订)"),
@@ -272,6 +345,8 @@ EU_STD_BY_CATEGORY = {
     "污染物": ("(EC) 1881/2006", "https://food.ec.europa.eu/food-safety/chemical-safety/contaminants/catalogue_en", "EU 食品污染物限量法规"),
     "真菌毒素": ("(EC) 1881/2006", "https://food.ec.europa.eu/food-safety/chemical-safety/contaminants/catalogue_en", "EU 真菌毒素限量(含于污染物法规)"),
     "微生物/致病菌": ("(EC) 2073/2005", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02005R2073", "EU 食品微生物标准"),
+    "理化指标": ("(EU) 2017/2158 等", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32017R2158", "EU 食品质量/减损相关法规(按品类)"),
+    "感官指标": ("(EC) 852/2004", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02004R0852", "EU 食品卫生法规(感官与卫生要求)"),
 }
 # 指标简中名 -> 类别
 INDICATOR_CATEGORY = {e[1]: e[0] for e in ALL_INDICATORS}
@@ -309,6 +384,10 @@ def resolved_cell(ind_simp, reg, source_map, risk_by_indicator):
     # 3. 标准体系映射：根据地区适用体系标注标准框架(即使无精确值)
     sys = REGION_SYSTEM.get(reg, "参照CODEX")
     cat = INDICATOR_CATEGORY.get(ind_simp, "")
+
+    # 感官指标：依具体产品标准感官要求评定，非地区性限量
+    if cat == "感官指标":
+        return ("依产品标准评定", "", "感官指标(色泽/气味/滋味/组织状态/杂质/异物/霉变/虫蛀/完整率/饱满度)依具体产品标准感官要求评定，非地区性数值限量", "na")
 
     # 采纳Codex的地区 → 标注适用Codex标准框架
     if sys == "参照CODEX" or reg == "CODEX":
