@@ -118,6 +118,7 @@ ALL_INDICATORS = [
     # D. 真菌毒素（GB 2761）
     ("真菌毒素", "黄曲霉毒素B1", "Aflatoxin B1", "CAS 1162-65-8", "GB 2761"),
     ("真菌毒素", "黄曲霉毒素M1", "Aflatoxin M1", "CAS 6795-23-9", "GB 2761"),
+    ("真菌毒素", "黄曲霉毒素(总量)", "Aflatoxin total (B1+B2+G1+G2)", "CAS —", "GB 2761"),
     ("真菌毒素", "脱氧雪腐镰刀菌烯醇(DON)", "Deoxynivalenol (DON)", "CAS 51481-10-8", "GB 2761"),
     ("真菌毒素", "展青霉素", "Patulin", "CAS 149-29-1", "GB 2761"),
     ("真菌毒素", "赭曲霉毒素A", "Ochratoxin A", "CAS 303-47-9", "GB 2761"),
@@ -197,9 +198,9 @@ BASE_LIMITS = {
     ("二氧化硫/SO₂残留", "CODEX"): (
         "≤1500 mg/kg (干制水果, 以总SO₂计)", "https://www.fao.org/gsfaonline/",
         "Codex CXS 192-1995 GSCTFF", "高", "干制水果", "Codex通用标准"),
-    # EU 干制水果 SO₂
+    # EU 干制水果 SO₂（(EC) 1333/2008 Annex II）
     ("二氧化硫/SO₂残留", "EU"): (
-        "≤1500 mg/kg (干制水果)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008R1333",
+        "≤2000 mg/kg (杏/桃/葡萄/梅/无花果等); 其他干果≤500 mg/kg (以SO₂计)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008R1333",
         "Regulation (EC) No 1333/2008 Annex II", "高", "干制水果", "EU添加剂法规"),
     # US SO₂ 声明阈值
     ("二氧化硫/SO₂残留", "US"): (
@@ -211,27 +212,39 @@ BASE_LIMITS = {
         "≤2.0 μg/kg (直接食用干制水果)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
         "Regulation (EC) No 1881/2006 Annex sect.2", "高", "干制水果", ""),
     # EU 干制水果/坚果 黄曲霉毒素总量
-    ("黄曲霉毒素总量", "EU"): (
-        "≤4 μg/kg (干制水果/坚果, 总黄曲霉毒素)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+    ("黄曲霉毒素(总量)", "EU"): (
+        "≤4 μg/kg (干制水果/坚果, 总黄曲霉毒素 B1+B2+G1+G2)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
         "Regulation (EC) No 1881/2006 Annex sect.2", "高", "干制水果/坚果", ""),
     # EU 固体苹果及苹果制品 展青霉素
     ("展青霉素", "EU"): (
         "≤25 μg/kg (固体苹果及苹果制品)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
         "Regulation (EC) No 1881/2006 Annex", "高", "苹果制品(含干制苹果)", ""),
-    # EU 干制葡萄制品 赭曲霉毒素A（2023年起 Reg (EU) 2022/1370）
+    # EU 干制水果 赭曲霉毒素A（Reg (EU) 2022/1370 修订 (EC) 1881/2006）
     ("赭曲霉毒素A", "EU"): (
-        "≤15 μg/kg (葡萄干等干制葡萄制品, 2023起)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
-        "Regulation (EU) 2022/1370 修订 1881/2006", "中", "干制葡萄制品", "2023年生效"),
-    # Codex 干制水果 黄曲霉毒素B1
-    ("黄曲霉毒素B1", "CODEX"): (
-        "≤5 μg/kg (干制水果,待核实)", "https://www.fao.org/fileadmin/user_upload/agns/pdf/CXS_193e.pdf",
-        "Codex CXS 193-1995", "中", "干制水果", "需核实精确值"),
+        "≤8.0 μg/kg (葡萄干/无花果干); ≤2.0 μg/kg (其他干果, 如芒果干)", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1881",
+        "Regulation (EU) 2022/1370 修订 (EC) 1881/2006", "高", "干制水果", "2023年生效"),
     # US 苹果汁 展青霉素行动水平（FDA）
     ("展青霉素", "US"): (
         "≤50 μg/kg (苹果汁, FDA行动水平)", "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101",
         "FDA Compliance Policy Guide §510.150", "中", "苹果汁", "行动水平非强制限量"),
-    # --- 农药残留 (Codex MRL / EU 396/2005 / US 40CFR180) ---
-    # 部分农药 MRL（待搜索结果补充精确值）
+    # --- 农药残留 (EU 396/2005 / US 40CFR180) ---
+    # 芒果干相关农药 MRL（precise-search 联网核实, 2026-07；均附权威来源）
+    # US 吡虫啉（芒果）
+    ("吡虫啉", "US"): (
+        "≤1.0 ppm (芒果, 40 CFR 180.472)", "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-E/part-180/section-472",
+        "EPA 40 CFR 180.472", "高", "芒果", "eCFR原文核实"),
+    # EU 毒死蜱（芒果, 2020-11起禁用, MRL降至0.01）
+    ("毒死蜱", "EU"): (
+        "≤0.01 mg/kg (芒果, 欧盟2020-11起禁用 MRL降至0.01)", "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/public/?event=activesubstance.selection",
+        "(EC) 396/2005 附录", "高", "芒果", "2020-11起禁用"),
+    # EU 溴氰菊酯（芒果, EFSA进口耐受量）
+    ("溴氰菊酯", "EU"): (
+        "≤0.05 mg/kg (芒果, EFSA进口耐受量)", "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/public/?event=activesubstance.selection",
+        "(EC) 396/2005 附录", "中", "芒果", "进口耐受量"),
+    # --- US 总黄曲霉毒素行动水平 (FDA CPG) ---
+    ("黄曲霉毒素(总量)", "US"): (
+        "≤20 ppb (总黄曲霉毒素, 无花果≤10 ppb; FDA CPG 638.100/555.400)", "https://www.fda.gov/food/compliance-enforcement-food/fda-guidance-documents-compliance-policy-guides",
+        "FDA Compliance Policy Guide 638.100/555.400", "高", "干制水果/坚果", "行动水平"),
 }
 
 # 指标 -> 默认不适用说明（本品类为蜜饯/干制水果）
@@ -436,9 +449,11 @@ def classify_indicator(raw):
         return "多氯联苯"
     if "3-氯" in s or "3-MCPD" in s or "氯丙二醇" in s:
         return "3-氯-1,2-丙二醇(3-MCPD)"
-    if "黃曲霉" in s or "黄曲霉" in s:
+    if "黃曲霉" in s or "黄曲霉" in s or "aflatoxin" in low:
         if "M1" in s or "M-1" in s:
             return "黄曲霉毒素M1"
+        if "总量" in s or "总黄曲" in s or "total" in low:
+            return "黄曲霉毒素(总量)"
         return "黄曲霉毒素B1"
     if "脱氧雪腐" in s or "DON" in s:
         return "脱氧雪腐镰刀菌烯醇(DON)"
