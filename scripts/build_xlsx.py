@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-FoodSafeML (foodsafeml) v1.11.0 — 工作簿生成器（全量矩阵 + 权威数据填充版）
+FoodSafeML (foodsafeml) v1.12.0 — 工作簿生成器（全量矩阵 + 权威数据填充版）
 ==========================================================
 给定某食品目录下的 basic.json / translations.json / risks.json，生成
 <食品名>_食品安全风险识别表.xlsx（3 个工作表）。
 
 v1.11.0 核心升级（国际基准回填 + 指标压实）：
   ① 地区清单 235 个（全球主权国家+地区+国际组织/联盟/论坛，按洲分组）。
-  ② 内置 BASE_LIMITS 权威限量数据库扩充至 130+ 条：Codex / EU / US / JP / CN
+  ② 内置 BASE_LIMITS 权威限量数据库扩充至 133 条：Codex / EU / US / JP / CN
      五套基准真实联网检索结果，有数据的填实际值+来源URL，大幅减少 [待填写]。
   ③ 标准体系映射回填：采纳/参照 Codex/EU/US/JP 的国家与地区，直接回填对应
      基准的具体限量值（绿色数据 + 外链法规原文），而非仅标注"适用标准框架"。
@@ -30,7 +30,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SKILL_VER = "1.11.0"
+SKILL_VER = "1.12.0"
 
 # ====== 全量地区数据（235 个：国家/地区 + 国际组织）来自 regions_data 模块 ======
 from regions_data import (
@@ -56,7 +56,7 @@ PAIRS = [
 SIMP2TRAD = {s: t for s, t in PAIRS}
 TRAD2SIMP = {t: s for s, t in SIMP2TRAD.items()}
 
-# ====== 全量指标清单（5 大类 72 项，按类别有序）======
+# ====== 全量指标清单（7 大类 126 项，按类别有序）======
 # (类别, 简中名, 英文名, 关联代码, 标准框架)
 ALL_INDICATORS = [
     # A. 食品添加剂（GB 2760-2024）
