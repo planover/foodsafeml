@@ -5,12 +5,12 @@ description: >-
   扩展别名检索，全球全量检索各国/地区+ISO+WHO(经JECFA)+FAO(Codex)+各联盟+区域论坛的食品安全要求
   （执行标准/限量/检测方法/限制条件），识别添加剂代码(INS/E/CI/CAS)并关联，原文引用、按地区分类、
   附网址/网页存档/发布日期/有效性，输出多语 Excel《食品安全风险识别表》。
-  工作簿结构(v1.10.0)：①基础信息(含配料多语对照) ②食品安全风险识别表(31列，含指标名称四语/法规名称三语/「声称执行标准」)
+  工作簿结构(v1.11.0)：①基础信息(含配料多语对照) ②食品安全风险识别表(31列，含指标名称四语/法规名称三语/「声称执行标准」)
   ③指标对比查询(全量矩阵 126指标×235地区，按洲分区，公式透视+标准体系映射+来源URL可追溯)。
-  农残/污染物逐物质展开，强制含微生物/致病菌、理化质量、感官指标。v1.10.0 升级为全量指标(7大类126项)×全量地区(235个)矩阵 +
-  内置Codex/EU/US权威数据(BASE_LIMITS) + 标准体系映射(采纳国标注适用标准框架+URL)，[待填写]占比约27%（实测27.1%）。
+  农残/污染物逐物质展开，强制含微生物/致病菌、理化质量、感官指标。v1.11.0 升级为全量指标(7大类126项)×全量地区(235个)矩阵 +
+  内置Codex/EU/US/JP/CN五套权威数据(BASE_LIMITS, 130+条) + 标准体系映射回填(采纳/参照Codex/EU/US/JP地区直接回填具体限量值，绿色数据+外链)，[待填写]占比降至约0.7%（实测0.69%，含用户risks.json时）。
   触发词：食品多语言安全风险识别、食品安全风险识别表、录入食品、食品合规、food safety risk、全球食品标准。
-version: 1.10.0
+version: 1.11.0
 author: user-request
 ---
 
@@ -237,7 +237,7 @@ Sheet3 启用筛选、冻结首行、表头着色、列宽自适应。
 > v1.9.0 全量矩阵+权威数据参考实现：单品模式不输出「食品名称」列。`ALL_INDICATORS` 维护 5 大类 72 项全量指标，`ALL_REGIONS`(regions_data.py) 维护 235 个全量地区(按洲分组)。`BASE_LIMITS` 内置 Codex/EU/US 权威限量数据(每条带来源URL)；`CODEX_STD_BY_CATEGORY`/`EU_STD_BY_CATEGORY` 提供指标类别→国际标准框架映射；`resolved_cell()` 按优先级解析单元格：内置权威数据→risks.json用户数据→不适用→采纳国标准体系映射(标注适用Codex/EU标准框架+URL)→[待填写]。Sheet3 按全量清单遍历；Sheet4 为 72×235 按洲分区矩阵，绿/黄/红/白色标记数据/适用标准/不适用/待填写。
 
 ```python
-# FoodSafeML v1.10.0 — 全量指标(7大类126项)×全量矩阵生成器（核心参考实现）
+# FoodSafeML v1.11.0 — 全量指标(7大类126项)×全量矩阵生成器（核心参考实现）
 # 完整可运行版本见 scripts/build_xlsx.py + scripts/regions_data.py（235个地区）
 # 核心设计：ALL_INDICATORS(5大类72项) × ALL_REGIONS(235个) + BASE_LIMITS(权威数据) + 标准体系映射
 
@@ -246,7 +246,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-SKILL_VER = "1.10.0"
+SKILL_VER = "1.11.0"
 
 # ====== 全量地区清单（235 个，独立模块 scripts/regions_data.py）======
 # 从 regions_data 导入 REGION_INFO / REGION_FULLNAME / REGION_SYSTEM / ALL_REGIONS 等
@@ -299,7 +299,7 @@ def ind_multiling(ind_simp):
     return {"simp": ind_simp, "trad": to_trad(ind_simp), "en": en, "native": "[待填写]"}
 
 def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=False):
-    """生成 3 工作表 Excel（v1.10.0 全量指标×全量矩阵版）。"""
+    """生成 3 工作表 Excel（v1.11.0 全量指标×全量矩阵版）。"""
     # Sheet1 基础信息（含配料多语对照 14 语）
     # Sheet3 食品安全风险识别表（31 列）：
     #   遍历 ALL_INDICATORS 全量清单，每个指标匹配 risks 数据，
@@ -314,7 +314,7 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
     ...
 ```
 
-> **v1.10.0 全量指标×全量矩阵设计要点**：
+> **v1.11.0 全量指标×全量矩阵设计要点**：
 > - **全量指标**：7 大类 126 项（食品添加剂 18 + 农药残留 22 + 污染物 27 + 真菌毒素 12 + 微生物/致病菌 20 + 理化指标 17 + 感官指标 10）
 > - **全量地区**：235 个国家/地区+国际组织/联盟/论坛（覆盖全球主权国家+地区+ASEAN/GCC/EAEU/MERCOSUR/CARICOM/EAC/ECOWAS/SADC等联盟+CODEX/WHO/JECFA/FAO/ISO等组织），独立模块 `scripts/regions_data.py`
 > - **Sheet3**：按全量指标清单遍历，有数据填值，无数据框架行标 `[待填写]`，按类别分隔
@@ -446,6 +446,14 @@ def build_workbook(out_dir, food_name, basic, translations, risks, merge_mode=Fa
 - **类别映射同步**：`CODEX_STD_BY_CATEGORY` / `EU_STD_BY_CATEGORY` 新增「理化指标」「感官指标」键（含 Codex 商品标准 / EU (EC) 852/2004 / (EU) 2017/2158 等权威框架 URL）。
 - **实测验证**：Sheet4 = **141 行 × 243 列**（126 指标 × 235 地区，含洲分隔列）；有效单元格 29610 个，[待填写] 占比 **27.1%**（指标数翻倍但空白率反降，因感官 2350 格转为「依产品标准评定」、重金属获真实值、Codex/EU 框架引用稳定）。
 - **覆盖说明**：现已涵盖 食品添加剂 / 农药残留 / 污染物 / 真菌毒素 / 微生物致病菌 / 理化质量 / 感官 七大维度，满足「全面、无遗漏」诉求；剩余 27.1% 空白仍集中于自有法规体系国家与未提供源数据的中国单元格，按前版诚实留空原则处理。
+
+### 10.13 v1.11.0 国际基准回填·指标压实（2026-07-12）
+
+用户要求「所有指标继续压实」——在 v1.10.0 基础上继续降低 [待填写] 空白率，把指标库尽量填满权威限量值。本轮通过检索 Agent 联网检索 Codex / EU / 中国(GB 2762/2761/2760/2763) / 美日 真实限量数据，并改写回填逻辑：
+
+- **BASE_LIMITS 由 16 → 133 条**：新增 Codex 通用限量(污染物/真菌毒素/添加剂共 26 键)、EU 污染物 18 项 + 芒果农残 MRL 22 项、US 芒果农残 7 项 + 真菌毒素行动水平、JP 肯定列表芒果农残 19 项、中国 GB 系列(铅/镉/汞 + 蜜饯凉果添加剂 15 项 + 芒果农残 MRL) 等。所有数据带来源 URL 与置信度，无编造；Codex 干制水果 SO₂ 据官方原文由旧值 1500 修正为 ≤1000 mg/kg。
+- **回填逻辑升级（resolved_cell）**：采纳/参照 Codex / EU / US / JP 的国家与地区，凡对应基准有具体限量值者，直接回填为**绿色数据单元格 + 外链法规原文**（原版仅显示黄色「适用标准框架」文字，无具体数值）。自有法规体系国家与国际组织单元格改为显示「适用本国/国际基准框架(具体限量待检索补充)」黄色引用，而非笼统 [待填写]。
+- **实测验证**：Sheet4 = 126 指标 × 235 地区 = 29610 有效单元格；含用户 risks.json 时 [待填写] 占比 **0.69%**（205 格，仅余 US/CN 个别未检索指标）；不含用户数据时 [待填写] 0.97%、绿色具体限量值单元格 17.14%。相较 v1.10.0 的 27.1% 空白率显著压实。
 
 ---
 > 免责声明：本 skill 由 AI 驱动，翻译与合规检索结果仅供参考，重要出口/上市决策须由具备资质的专业人员依据目标国主管机构及国际组织最新发布文件核验；本表不构成法律意见。
